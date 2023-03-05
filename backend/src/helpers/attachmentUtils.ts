@@ -14,6 +14,7 @@ export class AttachmentUtils{
     ){}
 
     getAttachmentUrl(todoId: string): string {
+       
         return `https://${this.bucketName}.s3.amazonaws.com/${todoId}`
     }
 
@@ -23,6 +24,6 @@ export class AttachmentUtils{
             Key: todoId,
             Expires: 300
         })
-        return url
+        return url as string
     }
 }

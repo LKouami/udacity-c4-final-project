@@ -29,7 +29,7 @@ export async function createTodo(
     ): Promise<TodoItem> {
     const todoId = uuid.v4()
     const createdAt = new Date().toISOString()
-    const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
+    // const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
     const newItem = {
         userId,
         todoId,
@@ -37,7 +37,7 @@ export async function createTodo(
         name: newTodo.name,
         dueDate : newTodo.dueDate,
         done: false,
-        attachmentUrl: s3AttachmentUrl,
+        // attachmentUrl: s3AttachmentUrl,
         ...newTodo
     }
     return await todosAccess.createTodo(newItem)
@@ -48,11 +48,8 @@ export async function getTodoItem(todoId: string, jwtToken: string): Promise<Tod
   return await todosAccess.getTodoItem(todoId, userId)
 }
 
-export async function setItemUrl(todoId: string, itemUrl: string, jwtToken: string): Promise<void> {
-  console.log("Setting Item URL")
-  console.log(itemUrl)
-  console.log(todoId)
-  const userId = parseUserId(jwtToken)
+export async function setItemUrl(todoId: string, itemUrl: string, userId: string): Promise<void> {
+ 
   const todoItem = await todosAccess.getTodoItem(todoId, userId)
 
   todosAccess.setItemUrl(todoItem.todoId, todoItem.createdAt, itemUrl);
@@ -63,7 +60,19 @@ export async function updateTodo(
     todoUpdate: UpdateTodoRequest,
     userId: string, 
   ): Promise<TodoUpdate> {
-    
+   
+    const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
+    todoUpdate.attachmentUrl = s3AttachmentUrl
+
+    return todosAccess.updateTodoItem(userId,todoId,  todoUpdate)
+}
+export async function setAttachmentUrl(
+    todoId: string,
+    todoUpdate: UpdateTodoRequest,
+    url:string,
+    userId: string, 
+  ): Promise<TodoUpdate> {
+    todoUpdate.attachmentUrl = url
     return todosAccess.updateTodoItem(userId,todoId,  todoUpdate)
 }
 
@@ -79,5 +88,9 @@ export async function createAttachmentPresignedUrl(
     userId: string
 ): Promise<string> {
   console.log("Creating Attachment Presigned URL for ", userId)
-    return attachmentUtils.getUploadUrl(todoId)
+  // const userTodo = await getTodoItem(todoId, userId)
+    // setAttachmentUrl(todoId, userTodo, userId)
+  const bucketName = process.env.ATTACHMENT_S3_BUCKET
+  await todosAccess.saveImgUrl(userId, todoId, bucketName);
+  return attachmentUtils.getUploadUrl(todoId)
 }

@@ -75,11 +75,12 @@ export class TodosAccess {
                 userId,
                 todoId
             },
-            UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done',
+            UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done, attachmentUrl = :attachmentUrl',
             ExpressionAttributeValues: {
                 ':name': todoUpdate.name,
                 ':dueDate': todoUpdate.dueDate,
-                ':done': todoUpdate.done
+                ':done': todoUpdate.done,
+                ':attachmentUrl': todoUpdate.attachmentUrl
             },
             ExpressionAttributeNames: {
                 '#name': 'name'
@@ -127,7 +128,23 @@ export class TodosAccess {
 
     await this.docClient.update(params).promise()
   }
+
+  async saveImgUrl(userId: string, todoId: string, bucketName: string): Promise<void> {
+    await this.docClient
+      .update({
+        TableName: this.todosTable,
+        Key: { userId, todoId },
+        ConditionExpression: 'attribute_exists(todoId)',
+        UpdateExpression: 'set attachmentUrl = :attachmentUrl',
+        ExpressionAttributeValues: {
+          ':attachmentUrl': `https://${bucketName}.s3.amazonaws.com/${todoId}`
+        }
+      })
+      .promise();
+  }
 }
+
+
 
 function createDynamoDBClient() {
   if (process.env.IS_OFFLINE) {
@@ -140,3 +157,5 @@ function createDynamoDBClient() {
 
   return new XAWS.DynamoDB.DocumentClient()
 }
+
+

@@ -8,6 +8,8 @@ plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
   - serverless-plugin-tracing
+  - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
 
 provider:
   name: aws
@@ -79,9 +81,15 @@ functions:
           path: todos
           cors: true
           authorizer: Auth
-          request:
-            schemas:
-          application/json: ${file(models/create-todo-model.json)}
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Creates a new TODO item
+            description: Creates a new TODO item
+            requestModels:
+              application/json: CreateTodoRequest
+          # request:
+          #   schemas:
+          # application/json: ${file(models/create-todo-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -107,7 +115,7 @@ functions:
           authorizer: Auth
           request:
             schema:
-              application/json: ${file(src/requests/UpdateTodoRequest.ts)}
+              application/json: ${file(models/update-todo-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -169,6 +177,21 @@ functions:
         Resource:
           - "*"
 
+custom:
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Serverless TODOs
+        description: This is a simple TODOs application built with the Serverless Framework.
+    models:
+      - name: CreateTodoRequest
+        contentType: application/json
+        schema: ${file(models/create-todo-model.json)}
+      - name: UpdateTodoRequest
+        contentType: application/json
+        schema: ${file(models/update-todo-model.json)}
+
 resources:
   Resources:
     # Add necessary AWS resources. You will need at least the following AWS resources
@@ -184,6 +207,15 @@ resources:
         ResponseType: DEFAULT_4XX
         RestApiId:
           Ref: ApiGatewayRestApi
+    
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: RequestBodyValidator
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
 
     # TODO: Create a DynamoDB table with local secondary index and a composite key
     TodosTable:
